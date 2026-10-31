@@ -3,8 +3,7 @@ name: Compile Pinoy Utility Box APK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,8 +20,14 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Grant Execute Permission for Gradle
-      run: chmod +x gradlew || echo "No local gradlew wrapper yet"
+    - name: Initialize and Generate Gradle Wrapper
+      run: gradle wrapper --gradle-version 8.1.1
 
-    - name: Compile Debug APK
-      run: ./gradlew assembleDebug || echo "Skipping compilation step until configurations are mapped"
+    - name: Compile Production Debug APK
+      run: ./gradlew assembleDebug
+
+    - name: Upload Finished APK Artifact File
+      uses: actions/upload-artifact@v4
+      with:
+        name: pinoy-utility-box-installer
+        path: app/build/outputs/apk/debug/app-debug.apk
