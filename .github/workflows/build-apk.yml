@@ -18,13 +18,15 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Initialize and Generate Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.1.1
+    # Automatically configures the Gradle build tool without needing manual wrapper commands
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.1.1'
 
     - name: Compile Production Debug APK
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
 
     - name: Upload Finished APK Artifact File
       uses: actions/upload-artifact@v4
