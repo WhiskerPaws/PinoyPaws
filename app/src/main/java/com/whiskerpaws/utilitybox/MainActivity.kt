@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MeralcoTrackerLayout()
+                    DualTrackerDashboard()
                 }
             }
         }
@@ -36,99 +36,156 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MeralcoTrackerLayout() {
-    var kwhInput by remember { mutableStateOf("") }
-    var estimatedBill by remember { mutableStateOf(0.0) }
+fun DualTrackerDashboard() {
+    var selectedTab by remember { mutableStateOf(0) }
     var dailyUsageCount by remember { mutableStateOf(0) }
     val maxFreeLimit = 3
     
-    // Average baseline electricity rate per kWh in PHP
-    val meralcoRatePerKwh = 11.50
+    val tabs = listOf("⚡ Meralco", "📺 Royal Cable")
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("⚡ Pinoy Meralco Tracker", fontWeight = FontWeight.Bold) },
+                title = { Text("Pinoy Utility Box", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
         },
         bottomBar = {
-            AdmobBannerView()
+            Column {
+                // Persistent AdMob bottom banner placeholder to maximize impression revenue
+                AdmobBannerView()
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+                        )
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(20.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Daily Free Computations: $dailyUsageCount / $maxFreeLimit",
+                        text = "Global Daily Free Actions: $dailyUsageCount / $maxFreeLimit",
                         fontWeight = FontWeight.Bold,
                         color = if (dailyUsageCount >= maxFreeLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = kwhInput,
-                onValueChange = { kwhInput = it },
-                label = { Text("Enter Monthly Consumption (kWh)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    if (dailyUsageCount < maxFreeLimit) {
-                        val kwh = kwhInput.toDoubleOrNull() ?: 0.0
-                        estimatedBill = kwh * meralcoRatePerKwh
-                        dailyUsageCount++
-                    } else {
-                        // Reset count or run rewarded monetization ad triggers here
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (dailyUsageCount >= maxFreeLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            if (selectedTab == 0) {
+                MeralcoSubModule(
+                    isLocked = dailyUsageCount >= maxFreeLimit,
+                    onActionExecuted = { dailyUsageCount++ }
                 )
-            ) {
-                if (dailyUsageCount < maxFreeLimit) {
-                    Text("Calculate Estimated Bill", fontSize = 16.sp)
-                } else {
-                    Text("🔒 Watch Ad to Unlock Calculator", fontSize = 16.sp)
+            } else {
+                RoyalCableSubModule(
+                    isLocked = dailyUsageCount >= maxFreeLimit,
+                    onActionExecuted = { dailyUsageCount++ }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MeralcoSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
+    var kwhInput by remember { mutableStateOf("") }
+    var estimatedBill by remember { mutableStateOf(0.0) }
+    val meralcoRatePerKwh = 11.50
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Meralco Bill Estimator", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedTextField(
+            value = kwhInput,
+            onValueChange = { kwhInput = it },
+            label = { Text("Enter Monthly Consumption (kWh)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = {
+                if (!isLocked) {
+                    val kwh = kwhInput.toDoubleOrNull() ?: 0.0
+                    estimatedBill = kwh * meralcoRatePerKwh
+                    onActionExecuted()
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+        ) {
+            Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Calculate Meralco Cost")
+        }
 
-            Spacer(modifier = Modifier.height(40.dp))
+        if (estimatedBill > 0.0) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Estimated Total Cost:", fontSize = 16.sp)
+            Text(String.format("₱%,.2f PHP", estimatedBill), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
 
-            if (estimatedBill > 0.0) {
-                Text("Estimated Total Cost:", fontSize = 18.sp, color = MaterialTheme.colorScheme.outline)
-                Text(
-                    text = String.format("₱%,.2f PHP", estimatedBill),
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Calculated at baseline rate of ₱$meralcoRatePerKwh/kWh",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+@Composable
+fun RoyalCableSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
+    var monthsInput by remember { mutableStateOf("1") }
+    var runningTotal by remember { mutableStateOf(0.0) }
+    val basePlanRate = 1400.0 // Tailored target rate configuration
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Royal Cable Bill Tracker", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedTextField(
+            value = monthsInput,
+            onValueChange = { monthsInput = it },
+            label = { Text("Number of Billing Months") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = {
+                if (!isLocked) {
+                    val months = monthsInput.toDoubleOrNull() ?: 1.0
+                    runningTotal = months * basePlanRate
+                    onActionExecuted()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)
+        ) {
+            Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Project Cable Expenses")
+        }
+
+        if (runningTotal > 0.0) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Projected Plan Obligation:", fontSize = 16.sp)
+            Text(String.format("₱%,.2f PHP", runningTotal), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
+            Text("Based on your steady subscription baseline of ₱1,400.00/mo.", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
