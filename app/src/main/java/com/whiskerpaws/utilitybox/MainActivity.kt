@@ -41,7 +41,7 @@ fun DualTrackerDashboard() {
     var dailyUsageCount by remember { mutableStateOf(0) }
     val maxFreeLimit = 3
     
-    val tabs = listOf("⚡ Meralco", "📺 Royal Cable")
+    val tabs = listOf("⚡ Meralco", "📺 Royal Cable", "📋 Clipboard")
 
     Scaffold(
         topBar = {
@@ -54,14 +54,13 @@ fun DualTrackerDashboard() {
         },
         bottomBar = {
             Column {
-                // Persistent AdMob bottom banner placeholder to maximize impression revenue
                 AdmobBannerView()
                 TabRow(selectedTabIndex = selectedTab) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+                            text = { Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
                         )
                     }
                 }
@@ -90,16 +89,10 @@ fun DualTrackerDashboard() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (selectedTab == 0) {
-                MeralcoSubModule(
-                    isLocked = dailyUsageCount >= maxFreeLimit,
-                    onActionExecuted = { dailyUsageCount++ }
-                )
-            } else {
-                RoyalCableSubModule(
-                    isLocked = dailyUsageCount >= maxFreeLimit,
-                    onActionExecuted = { dailyUsageCount++ }
-                )
+            when (selectedTab) {
+                0 -> MeralcoSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
+                1 -> RoyalCableSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
+                2 -> ClipboardSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
             }
         }
     }
@@ -151,7 +144,7 @@ fun MeralcoSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
 fun RoyalCableSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
     var monthsInput by remember { mutableStateOf("1") }
     var runningTotal by remember { mutableStateOf(0.0) }
-    val basePlanRate = 1400.0 // Tailored target rate configuration
+    val basePlanRate = 1400.0
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Royal Cable Bill Tracker", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
@@ -185,7 +178,52 @@ fun RoyalCableSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
             Text("Projected Plan Obligation:", fontSize = 16.sp)
             Text(String.format("₱%,.2f PHP", runningTotal), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
-            Text("Based on your steady subscription baseline of ₱1,400.00/mo.", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline)
+        }
+    }
+}
+
+@Composable
+fun ClipboardSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
+    var noteInput by remember { mutableStateOf("") }
+    var savedText by remember { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Everyday Clipboard Manager", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedTextField(
+            value = noteInput,
+            onValueChange = { noteInput = it },
+            label = { Text("Paste text or template snippet here...") },
+            modifier = Modifier.fillMaxWidth(),
+            maxLines = 4
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Button(
+            onClick = {
+                if (!isLocked && noteInput.isNotBlank()) {
+                    savedText = noteInput
+                    noteInput = ""
+                    onActionExecuted()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary)
+        ) {
+            Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Save Snippet to Clipboard")
+        }
+
+        if (savedText.isNotBlank()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Active Saved Clipboard Text:", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Text(text = savedText, modifier = Modifier.padding(12.dp), fontSize = 15.sp)
+            }
         }
     }
 }
