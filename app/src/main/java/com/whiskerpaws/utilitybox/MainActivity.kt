@@ -41,7 +41,7 @@ fun DualTrackerDashboard() {
     var dailyUsageCount by remember { mutableStateOf(0) }
     val maxFreeLimit = 3
     
-    val tabs = listOf("⚡ Meralco", "📺 Royal Cable", "📋 Clipboard")
+    val tabs = listOf("⚡ Meralco", "📺 Royal Cable", "💧 SPCWD Water")
 
     Scaffold(
         topBar = {
@@ -60,7 +60,7 @@ fun DualTrackerDashboard() {
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(title, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                            text = { Text(title, fontSize = 11.sp, fontWeight = FontWeight.SemiBold) }
                         )
                     }
                 }
@@ -92,7 +92,7 @@ fun DualTrackerDashboard() {
             when (selectedTab) {
                 0 -> MeralcoSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
                 1 -> RoyalCableSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
-                2 -> ClipboardSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
+                2 -> SpcwdSubModule(isLocked = dailyUsageCount >= maxFreeLimit, onActionExecuted = { dailyUsageCount++ })
             }
         }
     }
@@ -107,35 +107,14 @@ fun MeralcoSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Meralco Bill Estimator", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
-        
-        OutlinedTextField(
-            value = kwhInput,
-            onValueChange = { kwhInput = it },
-            label = { Text("Enter Monthly Consumption (kWh)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-        
+        OutlinedTextField(value = kwhInput, onValueChange = { kwhInput = it }, label = { Text("Enter Monthly Consumption (kWh)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(16.dp))
-        
-        Button(
-            onClick = {
-                if (!isLocked) {
-                    val kwh = kwhInput.toDoubleOrNull() ?: 0.0
-                    estimatedBill = kwh * meralcoRatePerKwh
-                    onActionExecuted()
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
-        ) {
+        Button(onClick = { if (!isLocked) { val kwh = kwhInput.toDoubleOrNull() ?: 0.0; estimatedBill = kwh * meralcoRatePerKwh; onActionExecuted() } }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)) {
             Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Calculate Meralco Cost")
         }
-
         if (estimatedBill > 0.0) {
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Estimated Total Cost:", fontSize = 16.sp)
-            Text(String.format("₱%,.2f PHP", estimatedBill), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Text(String.format("Estimated Cost: ₱%,.2f PHP", estimatedBill), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -149,80 +128,58 @@ fun RoyalCableSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Royal Cable Bill Tracker", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
         Spacer(modifier = Modifier.height(16.dp))
-        
-        OutlinedTextField(
-            value = monthsInput,
-            onValueChange = { monthsInput = it },
-            label = { Text("Number of Billing Months") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-        
+        OutlinedTextField(value = monthsInput, onValueChange = { monthsInput = it }, label = { Text("Number of Billing Months") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(16.dp))
-        
-        Button(
-            onClick = {
-                if (!isLocked) {
-                    val months = monthsInput.toDoubleOrNull() ?: 1.0
-                    runningTotal = months * basePlanRate
-                    onActionExecuted()
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)
-        ) {
+        Button(onClick = { if (!isLocked) { val months = monthsInput.toDoubleOrNull() ?: 1.0; runningTotal = months * basePlanRate; onActionExecuted() } }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)) {
             Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Project Cable Expenses")
         }
-
         if (runningTotal > 0.0) {
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Projected Plan Obligation:", fontSize = 16.sp)
-            Text(String.format("₱%,.2f PHP", runningTotal), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
+            Text(String.format("Projected Plan Obligation: ₱%,.2f PHP", runningTotal), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
         }
     }
 }
 
 @Composable
-fun ClipboardSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
-    var noteInput by remember { mutableStateOf("") }
-    var savedText by remember { mutableStateOf("") }
+fun SpcwdSubModule(isLocked: Boolean, onActionExecuted: () -> Unit) {
+    var accountNoInput by remember { mutableStateOf("") }
+    var amountInput by remember { mutableStateOf("") }
+    var trackerSavedMessage by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Everyday Clipboard Manager", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+        Text("SPCWD Water Bill Tracker", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
         Spacer(modifier = Modifier.height(16.dp))
         
-        OutlinedTextField(
-            value = noteInput,
-            onValueChange = { noteInput = it },
-            label = { Text("Paste text or template snippet here...") },
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 4
-        )
+        OutlinedTextField(value = accountNoInput, onValueChange = { accountNoInput = it }, label = { Text("Enter Water Account Number") }, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = amountInput, onValueChange = { amountInput = it }, label = { Text("Enter Bill Amount Due (₱)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
         
         Spacer(modifier = Modifier.height(16.dp))
         
         Button(
             onClick = {
-                if (!isLocked && noteInput.isNotBlank()) {
-                    savedText = noteInput
-                    noteInput = ""
+                if (!isLocked && accountNoInput.isNotBlank() && amountInput.isNotBlank()) {
+                    trackerSavedMessage = "Saved! Please pay via GCash App -> Pay Bills -> Water Utilities -> Search 'San Pablo Water District'"
                     onActionExecuted()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             colors = ButtonDefaults.buttonColors(containerColor = if (isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary)
         ) {
-            Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Save Snippet to Clipboard")
+            Text(if (isLocked) "🔒 Watch Ad to Unlock" else "Log & Verify Biller Info")
         }
 
-        if (savedText.isNotBlank()) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Active Saved Clipboard Text:", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        if (trackerSavedMessage.isNotBlank()) {
+            Spacer(modifier = Modifier.height(20.dp))
             Card(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
             ) {
-                Text(text = savedText, modifier = Modifier.padding(12.dp), fontSize = 15.sp)
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("💡 GCash Payment Guide:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                    Text(text = trackerSavedMessage, fontSize = 14.sp, color = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.padding(top = 4.dp))
+                    Text("⚠️ Note: GCash charges an additional ₱15 convenience fee.", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 6.dp))
+                }
             }
         }
     }
